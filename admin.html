@@ -1,0 +1,141 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>onewish — admin</title>
+<style>
+  :root{
+    --bg:#0c0d0f; --panel:#15171a; --card:#1b1e22; --border:#2a2d31;
+    --maroon:#b02b4c; --green:#33a072; --white:#f5f3ef; --dim:#9c9b97;
+  }
+  *{box-sizing:border-box;}
+  body{background:var(--bg); color:var(--white); font-family:'Work Sans',sans-serif; margin:0; padding:24px;}
+  h1{font-size:22px; margin-bottom:4px;}
+  .sub{color:var(--dim); font-size:13px; margin-bottom:24px;}
+  #loginBox{max-width:340px; margin:80px auto; text-align:center; background:var(--card); border:1px solid var(--border); border-radius:12px; padding:30px;}
+  #loginBox button{padding:12px 26px; border-radius:8px; border:none; background:var(--maroon); color:#fff; font-weight:600; cursor:pointer;}
+  #deniedBox{max-width:340px; margin:80px auto; text-align:center; color:var(--dim);}
+  table{width:100%; border-collapse:collapse; font-size:13px;}
+  th,td{padding:10px 12px; border-bottom:1px solid var(--border); text-align:left; vertical-align:top;}
+  th{color:var(--dim); font-weight:500; font-size:11.5px; text-transform:uppercase; letter-spacing:0.5px;}
+  .code{font-family:monospace; color:var(--green);}
+  select{background:var(--panel); color:var(--white); border:1px solid var(--border); border-radius:6px; padding:5px 8px; font-size:12.5px;}
+  .status-pending_quote{color:#e8c23d;}
+  .status-quoted{color:#6fa8a0;}
+  .status-paid{color:var(--green);}
+  .status-accepted{color:var(--green);}
+  .status-rejected{color:var(--maroon);}
+  .status-delivered{color:var(--dim);}
+  #app{display:none; max-width:1100px; margin:0 auto;}
+  .filters{margin-bottom:16px; display:flex; gap:8px; flex-wrap:wrap;}
+  .filters button{background:var(--panel); border:1px solid var(--border); color:var(--dim); padding:6px 14px; border-radius:20px; font-size:12px; cursor:pointer;}
+  .filters button.active{background:var(--maroon); color:#fff; border-color:var(--maroon);}
+</style>
+</head>
+<body>
+
+<div id="loginBox">
+  <p style="margin-bottom:16px; color:var(--dim);">Admin sign-in required</p>
+  <button id="loginBtn">Sign in with Google</button>
+</div>
+
+<div id="deniedBox" style="display:none;">Signed in, but this account isn't the admin account.</div>
+
+<div id="app">
+  <h1>onewish — admin</h1>
+  <div class="sub">All submitted wishes, newest first.</div>
+  <div class="filters" id="filters"></div>
+  <table>
+    <thead>
+      <tr><th>Code</th><th>Email</th><th>Instagram</th><th>Category</th><th>Wish</th><th>Price</th><th>Status</th><th>When</th></tr>
+    </thead>
+    <tbody id="rows"></tbody>
+  </table>
+</div>
+
+<script src="https://www.gstatic.com/firebasejs/10.13.0/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.13.0/firebase-auth-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.13.0/firebase-firestore-compat.js"></script>
+<script src="firebase-config.js"></script>
+<script>
+  // 🔧 Must match the admin email in your firestore.rules
+  const ADMIN_EMAIL = "nandakishor7p@gmail.com";
+
+  const STATUSES = ["pending_quote","quoted","paid","accepted","rejected","delivered"];
+  let currentFilter = "all";
+  let allWishes = [];
+
+  document.getElementById('loginBtn').addEventListener('click', signInWithGoogle);
+
+  auth.onAuthStateChanged(user => {
+    document.getElementById('loginBox').style.display = 'none';
+    document.getElementById('deniedBox').style.display = 'none';
+    document.getElementById('app').style.display = 'none';
+
+    if (!user) {
+      document.getElementById('loginBox').style.display = 'block';
+      return;
+    }
+    if (user.email !== ADMIN_EMAIL) {
+      document.getElementById('deniedBox').style.display = 'block';
+      return;
+    }
+    document.getElementById('app').style.display = 'block';
+    loadWishes();
+  });
+
+  function buildFilters(){
+    const container = document.getElementById('filters');
+    container.innerHTML = '';
+    ["all", ...STATUSES].forEach(s=>{
+      const btn = document.createElement('button');
+      btn.textContent = s.replace('_',' ');
+      if(s === currentFilter) btn.classList.add('active');
+      btn.addEventListener('click', ()=>{ currentFilter = s; render(); buildFilters(); });
+      container.appendChild(btn);
+    });
+  }
+
+  function loadWishes(){
+    db.collection('wishes').orderBy('createdAt','desc').onSnapshot(snap=>{
+      allWishes = snap.docs.map(d=>({ id:d.id, ...d.data() }));
+      buildFilters();
+      render();
+    });
+  }
+
+  function render(){
+    const rows = document.getElementById('rows');
+    rows.innerHTML = '';
+    const list = currentFilter === 'all' ? allWishes : allWishes.filter(w=>w.status===currentFilter);
+
+    list.forEach(w=>{
+      const tr = document.createElement('tr');
+      const when = w.createdAt && w.createdAt.toDate ? w.createdAt.toDate().toLocaleString() : '—';
+      tr.innerHTML = `
+        <td class="code">${w.orderCode || '—'}</td>
+        <td>${w.userEmail || '—'}</td>
+        <td>${w.igHandle || '—'}</td>
+        <td>${w.category || '—'}</td>
+        <td style="max-width:260px;">${(w.wishText||'').slice(0,140)}</td>
+        <td>₹${w.quotedPrice ?? '—'}</td>
+        <td><select data-id="${w.id}" class="status-${w.status}">
+              ${STATUSES.map(s=>`<option value="${s}" ${s===w.status?'selected':''}>${s.replace('_',' ')}</option>`).join('')}
+            </select></td>
+        <td>${when}</td>
+      `;
+      rows.appendChild(tr);
+    });
+
+    rows.querySelectorAll('select').forEach(sel=>{
+      sel.addEventListener('change', e=>{
+        const id = e.target.dataset.id;
+        db.collection('wishes').doc(id).update({ status: e.target.value });
+      });
+    });
+  }
+</script>
+
+</body>
+</html>

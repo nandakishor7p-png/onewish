@@ -1,0 +1,554 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>onewish — tell us your wish</title>
+<meta name="description" content="Tell us what you want. Get a quote. Approve before you pay.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@500;600;700&family=Work+Sans:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --bg:#0c0d0f;
+    --bg-panel:#15171a;
+    --bg-card:#1b1e22;
+    --border:#2a2d31;
+    --maroon:#7a1730;
+    --maroon-bright:#b02b4c;
+    --green:#1f6b4a;
+    --green-bright:#33a072;
+    --white:#f5f3ef;
+    --dim:#9c9b97;
+    --serif:'Cormorant Garamond', serif;
+    --sans:'Work Sans', sans-serif;
+  }
+  *{margin:0; padding:0; box-sizing:border-box;}
+  html{scroll-behavior:smooth;}
+  body{
+    background:var(--bg); color:var(--white); font-family:var(--sans);
+    line-height:1.6; overflow-x:hidden;
+  }
+  ::selection{background:var(--maroon-bright); color:var(--white);}
+  a{color:var(--green-bright);}
+  :focus-visible{outline:2px solid var(--green-bright); outline-offset:3px;}
+  img,svg{display:block;}
+  button{font-family:inherit; cursor:pointer;}
+
+  /* ================= INTRO SCREEN ================= */
+  #intro{
+    position:fixed; inset:0; z-index:100;
+    background:radial-gradient(ellipse at 50% 40%, #1a0d11 0%, #0c0d0f 65%);
+    display:flex; flex-direction:column; align-items:center; justify-content:center;
+    transition:opacity .8s ease, visibility .8s ease;
+  }
+  #intro.hide{opacity:0; visibility:hidden; pointer-events:none;}
+  #emberCanvas{position:absolute; inset:0; width:100%; height:100%;}
+  .intro-content{position:relative; z-index:2; text-align:center; padding:0 20px;}
+  .intro-mark{width:64px; height:64px; margin:0 auto 18px;}
+  .intro-title{
+    font-family:var(--serif); font-weight:700; font-size:clamp(38px,9vw,64px);
+    letter-spacing:1px; background:linear-gradient(120deg, var(--maroon-bright), var(--white) 45%, var(--green-bright));
+    -webkit-background-clip:text; background-clip:text; color:transparent;
+  }
+  .intro-sub{font-size:13px; letter-spacing:3px; text-transform:uppercase; color:var(--dim); margin-top:10px;}
+  .enter-btn{
+    margin-top:40px; padding:13px 34px; border-radius:30px;
+    background:transparent; border:1px solid var(--border); color:var(--white);
+    font-size:13px; letter-spacing:2px; text-transform:uppercase;
+    transition:border-color .25s, color .25s, box-shadow .25s;
+  }
+  .enter-btn:hover{border-color:var(--maroon-bright); color:var(--maroon-bright); box-shadow:0 0 24px -6px rgba(176,43,76,0.5);}
+
+  /* ================= NAV ================= */
+  nav{
+    position:sticky; top:0; z-index:40;
+    background:rgba(12,13,15,0.88); backdrop-filter:blur(10px);
+    border-bottom:1px solid var(--border);
+  }
+  .navwrap{max-width:1000px; margin:0 auto; padding:0 24px; height:60px; display:flex; align-items:center; justify-content:space-between;}
+  .brand{display:flex; align-items:center; gap:9px; font-family:var(--serif); font-weight:700; font-size:20px;}
+  .brand svg{width:22px; height:22px;}
+  .navlinks{display:flex; gap:26px; font-size:13px;}
+  .navlinks a{color:var(--dim); text-decoration:none;}
+  .navlinks a:hover{color:var(--white);}
+  @media(max-width:540px){ .navlinks{gap:14px; font-size:11.5px;} }
+
+  .wrap{max-width:1000px; margin:0 auto; padding:0 24px;}
+
+  /* ================= HERO ================= */
+  .hero{padding:90px 0 70px; text-align:center;}
+  .hero .eyebrow{font-size:12px; letter-spacing:3px; text-transform:uppercase; color:var(--green-bright); margin-bottom:16px;}
+  .hero h1{
+    font-family:var(--serif); font-weight:700; font-size:clamp(32px,6vw,54px);
+    max-width:16ch; margin:0 auto 18px; line-height:1.15;
+  }
+  .hero h1 em{font-style:normal; color:var(--maroon-bright);}
+  .hero p{color:var(--dim); max-width:52ch; margin:0 auto 32px; font-size:16px;}
+  .btn{
+    display:inline-block; padding:14px 30px; border-radius:8px; font-size:14px; font-weight:600;
+    text-decoration:none; border:1px solid transparent; transition:transform .15s, box-shadow .15s;
+  }
+  .btn-primary{background:linear-gradient(120deg, var(--maroon), var(--maroon-bright)); color:var(--white);}
+  .btn-primary:hover{transform:translateY(-2px); box-shadow:0 10px 30px -10px rgba(176,43,76,0.6);}
+
+  /* ================= SECTION SHARED ================= */
+  .section{padding:64px 0; border-top:1px solid var(--border);}
+  .sec-head{text-align:center; margin-bottom:44px;}
+  .sec-head .eyebrow{font-size:12px; letter-spacing:3px; text-transform:uppercase; color:var(--dim); margin-bottom:10px;}
+  .sec-head h2{font-family:var(--serif); font-weight:700; font-size:clamp(26px,4vw,36px);}
+
+  /* ================= HOW IT WORKS ================= */
+  .steps{display:grid; grid-template-columns:repeat(4,1fr); gap:18px;}
+  @media(max-width:760px){ .steps{grid-template-columns:1fr 1fr;} }
+  @media(max-width:460px){ .steps{grid-template-columns:1fr;} }
+  .step{
+    background:var(--bg-card); border:1px solid var(--border); border-radius:12px;
+    padding:24px 20px; position:relative;
+  }
+  .step .num{font-family:var(--serif); font-size:34px; font-weight:700; color:var(--maroon-bright); opacity:0.8;}
+  .step h3{font-size:15px; margin:10px 0 6px; font-weight:600;}
+  .step p{font-size:13px; color:var(--dim);}
+
+  /* ================= CATEGORIES ================= */
+  .cats{display:grid; grid-template-columns:repeat(3,1fr); gap:16px;}
+  @media(max-width:700px){ .cats{grid-template-columns:1fr 1fr;} }
+  @media(max-width:460px){ .cats{grid-template-columns:1fr;} }
+  .cat{
+    background:var(--bg-panel); border:1px solid var(--border); border-radius:12px; padding:22px;
+    transition:border-color .2s, transform .2s;
+  }
+  .cat:hover{border-color:var(--green-bright); transform:translateY(-3px);}
+  .cat .icon{font-size:22px; margin-bottom:10px;}
+  .cat h3{font-size:15px; margin-bottom:6px;}
+  .cat p{font-size:13px; color:var(--dim);}
+
+  /* ================= WISH FORM ================= */
+  .form-card{
+    background:var(--bg-card); border:1px solid var(--border); border-radius:16px;
+    padding:32px; max-width:560px; margin:0 auto;
+  }
+  .field{margin-bottom:20px;}
+  .field label{display:block; font-size:12.5px; color:var(--dim); margin-bottom:7px; letter-spacing:0.4px;}
+  .field input, .field select, .field textarea{
+    width:100%; background:var(--bg); border:1px solid var(--border); color:var(--white);
+    padding:12px 14px; border-radius:8px; font-family:var(--sans); font-size:14px;
+    transition:border-color .2s;
+  }
+  .field input:focus, .field select:focus, .field textarea:focus{border-color:var(--green-bright); outline:none;}
+  .field textarea{resize:vertical; min-height:100px;}
+  .hint{font-size:11.5px; color:#6b6a67; margin-top:6px;}
+  .submit-btn{
+    width:100%; padding:14px; border-radius:8px; border:none;
+    background:linear-gradient(120deg, var(--green), var(--green-bright)); color:var(--white);
+    font-weight:600; font-size:14.5px; margin-top:6px;
+  }
+  .submit-btn:hover{filter:brightness(1.08);}
+
+  /* quote / payment / confirm panels */
+  .panel{display:none;}
+  .panel.active{display:block;}
+  .quote-row{display:flex; justify-content:space-between; align-items:center; padding:14px 0; border-bottom:1px solid var(--border);}
+  .quote-row:last-of-type{border-bottom:none;}
+  .quote-label{color:var(--dim); font-size:13.5px;}
+  .quote-value{font-family:var(--serif); font-size:22px; font-weight:700; color:var(--maroon-bright);}
+  .quote-actions{display:flex; gap:10px; margin-top:22px;}
+  .btn-secondary{
+    flex:1; padding:13px; border-radius:8px; border:1px solid var(--border); background:transparent;
+    color:var(--dim); font-size:13.5px; font-weight:500;
+  }
+  .btn-secondary:hover{border-color:var(--white); color:var(--white);}
+  .quote-actions .submit-btn{flex:2; margin-top:0;}
+  .policy-note{font-size:12px; color:#6b6a67; margin-top:16px; line-height:1.6;}
+
+  .code-box{
+    text-align:center; padding:26px; background:var(--bg); border:1px dashed var(--green-bright);
+    border-radius:12px; margin:18px 0;
+  }
+  .code-box .code{font-family:var(--serif); font-size:30px; letter-spacing:3px; color:var(--green-bright); font-weight:700;}
+  .code-box .label{font-size:11px; color:var(--dim); letter-spacing:2px; text-transform:uppercase; margin-bottom:8px;}
+
+  /* ================= CONTACT / FOOTER ================= */
+  footer{padding:60px 0 50px; text-align:center;}
+  footer h2{font-family:var(--serif); font-size:26px; margin-bottom:10px;}
+  footer p{color:var(--dim); font-size:14px; margin-bottom:22px;}
+  .contact-links{display:flex; gap:20px; justify-content:center; flex-wrap:wrap; font-size:14px; margin-bottom:30px;}
+  .contact-links a{text-decoration:none; border-bottom:1px dashed var(--border); padding-bottom:2px;}
+  .foot-note{font-size:11.5px; color:#54524f; max-width:56ch; margin:0 auto;}
+
+  .fade{opacity:0; transform:translateY(14px); transition:opacity .5s ease, transform .5s ease;}
+  .fade.in{opacity:1; transform:none;}
+
+  @media(prefers-reduced-motion:reduce){
+    html{scroll-behavior:auto;}
+    .fade{opacity:1; transform:none; transition:none;}
+  }
+</style>
+</head>
+<body>
+
+<!-- ================= INTRO ================= -->
+<div id="intro">
+  <canvas id="emberCanvas"></canvas>
+  <div class="intro-content">
+    <svg class="intro-mark" viewBox="0 0 64 64" fill="none">
+      <path d="M32 4C24 18 14 24 14 38a18 18 0 0036 0c0-14-10-20-18-34z" fill="url(#g1)"/>
+      <defs>
+        <linearGradient id="g1" x1="14" y1="4" x2="50" y2="56" gradientUnits="userSpaceOnUse">
+          <stop stop-color="#b02b4c"/>
+          <stop offset="1" stop-color="#33a072"/>
+        </linearGradient>
+      </defs>
+    </svg>
+    <div class="intro-title">onewish</div>
+    <div class="intro-sub">say it. we'll quote it.</div>
+    <button class="enter-btn" id="enterBtn">Enter</button>
+  </div>
+</div>
+
+<!-- ================= NAV ================= -->
+<nav>
+  <div class="navwrap">
+    <div class="brand">
+      <svg viewBox="0 0 64 64" fill="none"><path d="M32 4C24 18 14 24 14 38a18 18 0 0036 0c0-14-10-20-18-34z" fill="url(#g2)"/>
+        <defs><linearGradient id="g2" x1="14" y1="4" x2="50" y2="56" gradientUnits="userSpaceOnUse">
+          <stop stop-color="#b02b4c"/><stop offset="1" stop-color="#33a072"/></linearGradient></defs></svg>
+      onewish
+    </div>
+    <div class="navlinks">
+      <a href="#how">how it works</a>
+      <a href="#wish">make a wish</a>
+      <a href="#contact">contact</a>
+    </div>
+  </div>
+</nav>
+
+<!-- ================= HERO ================= -->
+<header class="hero">
+  <div class="wrap">
+    <div class="eyebrow">digital requests, made real</div>
+    <h1>Tell us what you want. <em>We'll tell you what it costs.</em></h1>
+    <p>Design work, game help, digital tasks, custom builds — describe it, get a fair quote,
+      and only pay once you say yes.</p>
+    <a href="#wish" class="btn btn-primary">Make a wish</a>
+  </div>
+</header>
+
+<!-- ================= HOW IT WORKS ================= -->
+<section class="section" id="how">
+  <div class="wrap fade">
+    <div class="sec-head">
+      <div class="eyebrow">the process</div>
+      <h2>How onewish works</h2>
+    </div>
+    <div class="steps">
+      <div class="step">
+        <div class="num">01</div>
+        <h3>Tell us your wish</h3>
+        <p>Describe what you need — as much detail as you can give.</p>
+      </div>
+      <div class="step">
+        <div class="num">02</div>
+        <h3>Get a quote</h3>
+        <p>We review it and send back a price. No payment yet.</p>
+      </div>
+      <div class="step">
+        <div class="num">03</div>
+        <h3>Approve & pay</h3>
+        <p>Happy with the price? Confirm it, then pay securely.</p>
+      </div>
+      <div class="step">
+        <div class="num">04</div>
+        <h3>Get your code</h3>
+        <p>You'll get an order code — keep it for tracking and support.</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ================= CATEGORIES ================= -->
+<section class="section">
+  <div class="wrap fade">
+    <div class="sec-head">
+      <div class="eyebrow">what we take on</div>
+      <h2>Wish categories</h2>
+    </div>
+    <div class="cats">
+      <div class="cat"><div class="icon">🎨</div><h3>Design</h3><p>Logos, posters, thumbnails, edits.</p></div>
+      <div class="cat"><div class="icon">🎮</div><h3>Game help</h3><p>Tips, coaching, walkthroughs.</p></div>
+      <div class="cat"><div class="icon">💻</div><h3>Dev & code</h3><p>Small builds, scripts, fixes.</p></div>
+      <div class="cat"><div class="icon">📱</div><h3>Social growth</h3><p>Content ideas, page setup, strategy.</p></div>
+      <div class="cat"><div class="icon">📝</div><h3>Writing</h3><p>Captions, bios, short copy.</p></div>
+      <div class="cat"><div class="icon">✨</div><h3>Something else</h3><p>Describe it — if we can do it, we will.</p></div>
+    </div>
+  </div>
+</section>
+
+<!-- ================= WISH FORM ================= -->
+<section class="section" id="wish">
+  <div class="wrap fade">
+    <div class="sec-head">
+      <div class="eyebrow">step 1 of 3</div>
+      <h2>Make a wish</h2>
+    </div>
+
+    <div class="form-card">
+
+      <!-- PANEL 1: FORM -->
+      <div class="panel active" id="panelForm">
+        <div class="field" id="authField">
+          <label>Sign in to continue</label>
+          <div style="display:flex; gap:10px; flex-wrap:wrap;">
+            <button type="button" class="btn-secondary" id="googleSignInBtn" style="flex:1;">Continue with Google</button>
+          </div>
+          <div class="hint">or</div>
+          <input type="email" id="email" placeholder="you@example.com" style="margin-top:8px;">
+          <button type="button" class="btn-secondary" id="emailLinkBtn" style="width:100%; margin-top:8px;">Send sign-in link</button>
+          <div class="hint" id="authStatus">Not signed in yet — required before you can submit a wish.</div>
+        </div>
+        <div class="field" id="categoryField" style="display:none;">
+          <label for="category">Category</label>
+          <select id="category">
+            <option>Design</option>
+            <option>Game help</option>
+            <option>Dev & code</option>
+            <option>Social growth</option>
+            <option>Writing</option>
+            <option>Something else</option>
+          </select>
+        </div>
+        <div class="field" id="igField" style="display:none;">
+          <label for="igHandle">Your Instagram username</label>
+          <input type="text" id="igHandle" placeholder="@yourusername" required>
+          <div class="hint">We'll message you here if we need more details or to confirm your wish.</div>
+        </div>
+        <div class="field" id="wishTextField" style="display:none;">
+          <label for="wishText">What's your wish?</label>
+          <textarea id="wishText" placeholder="Describe exactly what you want..." required></textarea>
+        </div>
+        <button class="submit-btn" id="submitWish" style="display:none;">Get my quote</button>
+      </div>
+
+      <!-- PANEL 2: QUOTE -->
+      <div class="panel" id="panelQuote">
+        <div class="quote-row">
+          <span class="quote-label">Category</span>
+          <span id="qCategory" style="font-size:14px;"></span>
+        </div>
+        <div class="quote-row">
+          <span class="quote-label">Estimated price</span>
+          <span class="quote-value" id="qPrice">₹0</span>
+        </div>
+        <div class="quote-actions">
+          <button class="btn-secondary" id="editWish">Edit wish</button>
+          <button class="submit-btn" id="acceptQuote">Approve & pay</button>
+        </div>
+        <div class="policy-note">This is an estimate — final price is confirmed in your inbox before any charge.
+          Nothing is charged until you approve. Full refund if we can't deliver what you asked for.</div>
+      </div>
+
+      <!-- PANEL 3: PAYMENT (mock) -->
+      <div class="panel" id="panelPay">
+        <div class="field">
+          <label for="payMethod">Payment method</label>
+          <select id="payMethod">
+            <option>UPI</option>
+            <option>Card</option>
+            <option>Net banking</option>
+          </select>
+        </div>
+        <div class="quote-row">
+          <span class="quote-label">Total</span>
+          <span class="quote-value" id="payTotal">₹0</span>
+        </div>
+        <button class="submit-btn" id="payNow">Pay now</button>
+        <div class="policy-note">Demo flow — connect a real gateway (Razorpay/UPI intent) here before going live.</div>
+      </div>
+
+      <!-- PANEL 4: CONFIRMATION -->
+      <div class="panel" id="panelDone">
+        <div style="text-align:center;">
+          <div style="font-size:15px; color:var(--dim); margin-bottom:4px;">Your wish is in ✦</div>
+          <div class="code-box">
+            <div class="label">Order code</div>
+            <div class="code" id="orderCode">—</div>
+          </div>
+          <p style="font-size:13.5px; color:var(--dim);">Save this code. Message it to us on email or Instagram
+            for support or updates — we'll confirm whether your wish is accepted and get started.</p>
+        </div>
+      </div>
+
+    </div>
+  </div>
+</section>
+
+<!-- ================= CONTACT ================= -->
+<footer id="contact">
+  <div class="wrap fade">
+    <h2>Need help?</h2>
+    <p>Reach out any time with your order code.</p>
+    <div class="contact-links">
+      <a href="mailto:greatcrxm@gmail.com">greatcrxm@gmail.com</a>
+      <a href="https://instagram.com/y.crxem" target="_blank" rel="noopener">@y.crxem</a>
+    </div>
+    <div class="foot-note">onewish is a made-to-order digital request service. Quotes are estimates until confirmed.
+      No payment is taken before you approve a price. © 2026 onewish.</div>
+  </div>
+</footer>
+
+<script src="https://www.gstatic.com/firebasejs/10.13.0/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.13.0/firebase-auth-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.13.0/firebase-firestore-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.13.0/firebase-app-check-compat.js"></script>
+<script src="firebase-config.js"></script>
+<script>
+  /* ---------- Intro ember canvas ---------- */
+  const canvas = document.getElementById('emberCanvas');
+  const ctx = canvas.getContext('2d');
+  let W, H, embers = [];
+  function resize(){ W = canvas.width = window.innerWidth; H = canvas.height = window.innerHeight; }
+  resize(); window.addEventListener('resize', resize);
+
+  function spawnEmber(){
+    embers.push({
+      x: W/2 + (Math.random()-0.5)*140,
+      y: H/2 + 60 + Math.random()*40,
+      r: Math.random()*2.2+0.6,
+      speed: Math.random()*0.6+0.3,
+      drift: (Math.random()-0.5)*0.6,
+      life: 1,
+      hue: Math.random()>0.5 ? 'rgba(176,43,76,' : 'rgba(51,160,114,'
+    });
+  }
+  let raf;
+  function loop(){
+    ctx.clearRect(0,0,W,H);
+    if(Math.random()<0.6) spawnEmber();
+    embers.forEach(e=>{
+      e.y -= e.speed; e.x += e.drift; e.life -= 0.006;
+      ctx.beginPath();
+      ctx.fillStyle = e.hue + Math.max(e.life,0) + ')';
+      ctx.arc(e.x, e.y, e.r, 0, Math.PI*2);
+      ctx.fill();
+    });
+    embers = embers.filter(e=>e.life>0);
+    raf = requestAnimationFrame(loop);
+  }
+  const reduce = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+  if(!reduce){ loop(); }
+
+  document.getElementById('enterBtn').addEventListener('click', ()=>{
+    document.getElementById('intro').classList.add('hide');
+    if(raf) cancelAnimationFrame(raf);
+  });
+
+  /* ---------- Wish flow ---------- */
+  const panels = {
+    form: document.getElementById('panelForm'),
+    quote: document.getElementById('panelQuote'),
+    pay: document.getElementById('panelPay'),
+    done: document.getElementById('panelDone')
+  };
+  function show(panel){
+    Object.values(panels).forEach(p=>p.classList.remove('active'));
+    panel.classList.add('active');
+  }
+
+  // simple mock pricing by category — replace with your real rate logic
+  const basePrices = {
+    'Design': 300, 'Game help': 150, 'Dev & code': 800,
+    'Social growth': 400, 'Writing': 200, 'Something else': 350
+  };
+
+  let currentQuote = 0;
+  let currentOrderCode = '';
+
+  // ---- Auth wiring ----
+  checkEmailLinkSignIn(); // handles return trip from email link
+
+  auth.onAuthStateChanged(user=>{
+    const authField = document.getElementById('authField');
+    const categoryField = document.getElementById('categoryField');
+    const wishTextField = document.getElementById('wishTextField');
+    const submitBtn = document.getElementById('submitWish');
+    const authStatus = document.getElementById('authStatus');
+
+    if(user){
+      authField.style.display = 'none';
+      categoryField.style.display = 'block';
+      document.getElementById('igField').style.display = 'block';
+      wishTextField.style.display = 'block';
+      submitBtn.style.display = 'block';
+    } else {
+      authField.style.display = 'block';
+      categoryField.style.display = 'none';
+      document.getElementById('igField').style.display = 'none';
+      wishTextField.style.display = 'none';
+      submitBtn.style.display = 'none';
+      authStatus.textContent = 'Not signed in yet — required before you can submit a wish.';
+    }
+  });
+
+  document.getElementById('googleSignInBtn').addEventListener('click', ()=>{
+    signInWithGoogle().catch(err=> alert('Sign-in failed: ' + err.message));
+  });
+
+  document.getElementById('emailLinkBtn').addEventListener('click', ()=>{
+    const email = document.getElementById('email').value.trim();
+    if(!email){ alert('Enter your email first.'); return; }
+    sendEmailLink(email).then(()=>{
+      document.getElementById('authStatus').textContent = 'Link sent to ' + email + ' — open it on this device to finish signing in.';
+    }).catch(err=> alert('Could not send link: ' + err.message));
+  });
+
+  // ---- Wish submit → quote (quote shown, nothing charged yet) ----
+  document.getElementById('submitWish').addEventListener('click', ()=>{
+    const wishText = document.getElementById('wishText').value.trim();
+    const igHandle = document.getElementById('igHandle').value.trim();
+    if(!wishText){
+      alert('Please describe your wish first.');
+      return;
+    }
+    if(!igHandle){
+      alert('Please add your Instagram username — we use this to reach you.');
+      return;
+    }
+    const cat = document.getElementById('category').value;
+    const lengthFactor = Math.min(Math.floor(wishText.length/60), 4);
+    currentQuote = basePrices[cat] + lengthFactor*50;
+
+    // Write to Firestore now, status = pending_quote.
+    // Admin reviews in /admin.html and can adjust price/status there.
+    submitWish({ category: cat, wishText, quotedPrice: currentQuote, igHandle })
+      .then(orderCode=>{
+        currentOrderCode = orderCode;
+        document.getElementById('qCategory').textContent = cat;
+        document.getElementById('qPrice').textContent = '₹' + currentQuote;
+        show(panels.quote);
+      })
+      .catch(err=> alert('Could not submit: ' + err.message));
+  });
+
+  document.getElementById('editWish').addEventListener('click', ()=> show(panels.form));
+
+  document.getElementById('acceptQuote').addEventListener('click', ()=>{
+    document.getElementById('payTotal').textContent = '₹' + currentQuote;
+    show(panels.pay);
+  });
+
+  document.getElementById('payNow').addEventListener('click', ()=>{
+    // Payment integration comes later — for now this just confirms the order code
+    // that was already created in Firestore when the wish was submitted.
+    document.getElementById('orderCode').textContent = currentOrderCode;
+    show(panels.done);
+  });
+
+  /* ---------- scroll fade ---------- */
+  const faders = document.querySelectorAll('.fade');
+  const io = new IntersectionObserver((entries)=>{
+    entries.forEach(e=>{ if(e.isIntersecting){ e.target.classList.add('in'); io.unobserve(e.target); } });
+  }, {threshold:0.12});
+  faders.forEach(f=>io.observe(f));
+</script>
+
+</body>
+</html>
