@@ -218,6 +218,7 @@
       <a href="#how">how it works</a>
       <a href="#wish">make a wish</a>
       <a href="#contact">contact</a>
+      <a href="mywishes.html">my wishes</a>
     </div>
   </div>
 </nav>
@@ -304,6 +305,12 @@
           <input type="email" id="email" placeholder="you@example.com" style="margin-top:8px;">
           <button type="button" class="btn-secondary" id="emailLinkBtn" style="width:100%; margin-top:8px;">Send sign-in link</button>
           <div class="hint" id="authStatus">Not signed in yet — required before you can submit a wish.</div>
+        </div>
+        <div class="field" id="signedInField" style="display:none;">
+          <div style="display:flex; justify-content:space-between; align-items:center; background:var(--bg); border:1px solid var(--border); border-radius:8px; padding:10px 14px;">
+            <span style="font-size:13px; color:var(--dim);">Signed in as <span id="signedInEmail" style="color:var(--white);"></span></span>
+            <button type="button" id="signOutBtn" style="background:none; border:none; color:var(--green-bright); font-size:12.5px; cursor:pointer; text-decoration:underline;">Sign out</button>
+          </div>
         </div>
         <div class="field" id="categoryField" style="display:none;">
           <label for="category">Category</label>
@@ -474,12 +481,15 @@
 
     if(user){
       authField.style.display = 'none';
+      document.getElementById('signedInField').style.display = 'block';
+      document.getElementById('signedInEmail').textContent = user.email;
       categoryField.style.display = 'block';
       document.getElementById('igField').style.display = 'block';
       wishTextField.style.display = 'block';
       submitBtn.style.display = 'block';
     } else {
       authField.style.display = 'block';
+      document.getElementById('signedInField').style.display = 'none';
       categoryField.style.display = 'none';
       document.getElementById('igField').style.display = 'none';
       wishTextField.style.display = 'none';
@@ -487,6 +497,8 @@
       authStatus.textContent = 'Not signed in yet — required before you can submit a wish.';
     }
   });
+
+  document.getElementById('signOutBtn').addEventListener('click', ()=> auth.signOut());
 
   document.getElementById('googleSignInBtn').addEventListener('click', ()=>{
     signInWithGoogle().catch(err=> alert('Sign-in failed: ' + err.message));
